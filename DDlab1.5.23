@@ -1,53 +1,86 @@
-byte seven_seg_digits[10][7] = { { 0,0,0,0,0,0,1 },  // = 0
-                                 { 1,0,0,1,1,1,1 },  // = 1
-                                 { 0,0,1,0,0,1,0 },  // = 2
-                                 { 0,0,0,0,1,1,0 },  // = 3
-                                 { 1,0,0,1,1,0,0 },  // = 4
-                                 { 0,1,0,0,1,0,0 },  // = 5
-                                 { 0,1,0,0,0,0,0 },  // = 6
-                                 { 0,0,0,1,1,1,1 },  // = 7
-                                 { 0,0,0,0,0,0,0 },  // = 8
-                                 { 0,0,0,1,1,0,0 }   // = 9
-                             };
+#define ROW1 13
+#define ROW2 12
+#define ROW3 11
+#define ROW4 10
+#define ROW5 9
+#define ROW6 8
+#define ROW7 7
+#define ROW8 6
 
-const int buttonPin = 12;
-int buttonState =HIGH;
-int lastButtonState = HIGH;
-int num = 0;
+#define COL1 5
+#define COL2 4
+#define COL3 3
+#define COL4 A4
+#define COL5 A3
+#define COL6 A2
+#define COL7 A1
+#define COL8 A0
+#define BUTTON 2
+const int row[] = {
+  ROW1, ROW2, ROW3, ROW4, ROW5, ROW6, ROW7, ROW8
+};
+const int col[] = {
+  COL1, COL2, COL3, COL4, COL5, COL6, COL7, COL8
+};
 
-void setup() {               
-  pinMode(2, OUTPUT);  
-  pinMode(3, OUTPUT);
-  pinMode(4, OUTPUT);
-  pinMode(5, OUTPUT);
-  pinMode(6, OUTPUT);
-  pinMode(7, OUTPUT);
-  pinMode(8, OUTPUT);
-  pinMode(9, OUTPUT);
+byte scan[8][8] = {
+  {1, 0, 0, 0, 0, 0, 0, 0},
+  {0, 1, 0, 0, 0, 0, 0, 0},
+  {0, 0, 1, 0, 0, 0, 0, 0},
+  {0, 0, 0, 1, 0, 0, 0, 0},
+  {0, 0, 0, 0, 1, 0, 0, 0},
+  {0, 0, 0, 0, 0, 1, 0, 0},
+  {0, 0, 0, 0, 0, 0, 1, 0},
+  {0, 0, 0, 0, 0, 0, 0, 1}
+};
 
+byte circle[8][8] = {
+  {1, 1, 0, 0, 0, 0, 1, 1},
+  {1, 0, 1, 1, 1, 1, 0, 1},
+  {0, 1, 1, 1, 1, 1, 1, 0},
+  {0, 1, 1, 1, 1, 1, 1, 0},
+  {0, 1, 1, 1, 1, 1, 1, 0},
+  {0, 1, 1, 1, 1, 1, 1, 0},
+  {1, 0, 1, 1, 1, 1, 0, 1},
+  {1, 1, 0, 0, 0, 0, 1, 1}
+};
 
-  pinMode(buttonPin,INPUT_PULLUP);
+void setup()
+{
+
+  for (byte i = 0; i <= sizeof(row); i++) {
+    pinMode(row[i], OUTPUT);
+  }
+  for (byte i = 0; i <= sizeof(col); i++) {
+    pinMode(col[i], OUTPUT);
+  }
+
   Serial.begin(9600);
+
 }
 
-void sevenSegWrite(byte digit) {
-  byte pin = 2;
-  for (byte seg = 0; seg < 7; ++seg) {
-    digitalWrite(pin, seven_seg_digits[digit][seg]);
-    ++pin;
+void loop()
+{
+  if (Serial.available() >= 8) {
+    for (int row = 0; row < 8; row++) {
+      byte b = Serial.read();
+      for (int col = 0; col < 8; col++) {
+        circle[row][col] = (b >> (7 - col)) & 0x01;
+      }
+    }
   }
+  showPattern(circle);
 }
 
-void loop() {
-  
-  buttonState = digitalRead(buttonPin);
-  if (lastButtonState == HIGH && buttonState == LOW) {
-    num++;
-    if (num > 9) num = 0;  
-    sevenSegWrite(num);
-    Serial.println(num);
-    delay(1000);  
+void showPattern(byte matrix[8][8]) {
+  for (byte i = 0; i < 8; i++) {
+    for (byte j = 0; j < 8; j++) {
+      digitalWrite(row[j], 1 - scan[i][j]);
+      digitalWrite(col[j], 1 - matrix[i][j]);
+    }
+    for (byte j = 0; j < 8; j++) {
+      digitalWrite(row[j], HIGH);
+      digitalWrite(col[j], LOW);
+    }
   }
-
-  lastButtonState = buttonState;
 }
